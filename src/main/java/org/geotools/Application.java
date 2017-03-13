@@ -133,6 +133,7 @@ public class Application{
 
         com.vividsolutions.jts.geom.Point geoPoint = geometryFactory.createPoint(new Coordinate(position2D.getX(), position2D.getY()));
         points.add(geoPoint);
+        System.out.println("Selected point: " + geoPoint.toString());
 
 
         Point screenPos = ev.getPoint();
@@ -338,7 +339,7 @@ public class Application{
                 }finally {
                     transaction.close();
                 }
-                System.exit(0);
+                //System.exit(0);
             } else {
                 System.out.println(typeName + " does not support read/write access");
                 System.exit(1);
