@@ -73,8 +73,8 @@ public class ServiceShape {
                 Point currentPoint = (Point) geometry.getGeometryN(i);
                 Point nextPoint = (Point) geometry.getGeometryN(i + 1);
                 LineString pline = geometryLab.getLineFromPoints(currentPoint, nextPoint);
-                j++;
                 interval.setpN("P" + j);
+                j++;
                 double length = GeodeticLab.getDistance(currentPoint, nextPoint);
                 double result = Math.rint(100.0 * length) / 100.0;
                 interval.setLength(result);

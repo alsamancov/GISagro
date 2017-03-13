@@ -105,7 +105,7 @@ public class Application{
         mapFrame.enableStatusBar(true);
 
         JToolBar toolBar = mapFrame.getToolBar();
-        JButton button = new JButton("Choose two point and press Save");
+        JButton button = new JButton("Choose two points and press Save");
         toolBar.addSeparator();
         toolBar.add(button);
         toolBar.add(new JButton(new ExportShapefileAction("Save result in shp")));
