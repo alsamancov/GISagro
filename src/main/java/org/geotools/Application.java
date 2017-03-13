@@ -78,7 +78,7 @@ public class Application{
     private String geometryAttributeName;
     private GeomType geometryType;
 
-    GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
+    private GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
 
 
     public static void main(String[] args) throws Exception {
@@ -105,7 +105,7 @@ public class Application{
         mapFrame.enableStatusBar(true);
 
         JToolBar toolBar = mapFrame.getToolBar();
-        JButton button = new JButton("Choose two point");
+        JButton button = new JButton("Choose two point and press Save");
         toolBar.addSeparator();
         toolBar.add(button);
         toolBar.add(new JButton(new ExportShapefileAction("Save result in shp")));
@@ -298,38 +298,32 @@ public class Application{
             List<SimpleFeature> newFeatures = new ArrayList<>();
             SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
 
-            for(int i = 0; i < intervals.size(); i++){
-                Interval interval = intervals.get(i);
+            for(Interval interval : intervals){
+                LineString localLine = interval.getLineString();
                 featureBuilder.add(interval.getpN());
                 featureBuilder.add(interval.getLength());
-                featureBuilder.add(interval.getLineString());
+                featureBuilder.add(localLine);
 
                 SimpleFeature feature = featureBuilder.buildFeature(null);
                 newFeatures.add(feature);
             }
-
             File newFile = getNewShapeFile(file);
 
-
-
-
-
-
             ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-
             Map<String, Serializable> params = new HashMap<>();
             params.put("url", newFile.toURI().toURL());
             params.put("create spatial index", Boolean.TRUE);
 
             ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+
             newDataStore.createSchema(TYPE);
 
-            newDataStore.forceSchemaCRS(DefaultGeographicCRS.WGS84);
             Transaction transaction = new DefaultTransaction("create");
             String newTypeName = newDataStore.getTypeNames()[0];
-            SimpleFeatureSource featureSource = newDataStore.getFeatureSource(typeName);
+            SimpleFeatureSource featureSource = newDataStore.getFeatureSource(newTypeName);
+            SimpleFeatureType SHAPE_TYPE = featureSource.getSchema();
 
-            //SimpleFeatureType SHAPE_TYPE = featureSource.getSchema();
+            System.out.println("SHAPE: " + SHAPE_TYPE);
 
             if(featureSource instanceof SimpleFeatureStore){
                 SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
@@ -338,17 +332,18 @@ public class Application{
                 try{
                     featureStore.addFeatures(collection1);
                     transaction.commit();
-                }catch (Exception e){
+                } catch (Exception e){
                     e.printStackTrace();
                     transaction.rollback();
-                } finally {
+                }finally {
                     transaction.close();
                 }
                 System.exit(0);
-            } else{
-                System.out.println(newTypeName + " does not support read/write access");
+            } else {
+                System.out.println(typeName + " does not support read/write access");
                 System.exit(1);
             }
+
         }
 
         private File getNewShapeFile(File file) {
@@ -378,8 +373,8 @@ public class Application{
 
 
             builder.length(254).add("P-N", String.class);
-            builder.add("LENGTH", Double.class);
-            builder.add("Location", LineString.class);
+            builder.add("LENGTH", String.class);
+            builder.add("the_geom", LineString.class);
 
             final SimpleFeatureType LOCATION = builder.buildFeatureType();
             return LOCATION;

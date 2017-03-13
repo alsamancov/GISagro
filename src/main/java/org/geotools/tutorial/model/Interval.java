@@ -3,21 +3,12 @@ package org.geotools.tutorial.model;
 
 import com.vividsolutions.jts.geom.LineString;
 
-/**
- * Created by Alexey on 03/13/2017.
- */
 public class Interval {
     private LineString lineString;
     private String pN;
     private double length;
 
     public Interval() {
-    }
-
-    public Interval(LineString lineString, String pN, double length) {
-        this.lineString = lineString;
-        this.pN = pN;
-        this.length = length;
     }
 
     public LineString getLineString() {

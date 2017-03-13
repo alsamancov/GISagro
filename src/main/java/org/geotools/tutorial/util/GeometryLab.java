@@ -10,7 +10,7 @@ import java.text.ParseException;
  * Created by Alexey on 03/10/2017.
  */
 public class GeometryLab {
-    GeometryFactory geometryFactory;
+    private GeometryFactory geometryFactory;
     public GeometryLab() {
         this.geometryFactory = JTSFactoryFinder.getGeometryFactory();
     }

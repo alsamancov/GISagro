@@ -18,9 +18,8 @@ import java.util.ArrayList;
 
 public class ServiceShape {
     private ArrayList<Point> points = new ArrayList<Point>();
-    private LineString lineString;
     private ArrayList<Interval> intervals = new ArrayList<>();
-    SimpleFeature feature;
+    private SimpleFeature feature;
 
     public ArrayList<Point> getPoints() {
         return points;
@@ -30,9 +29,7 @@ public class ServiceShape {
         this.points = points;
     }
 
-    public void setLineString(LineString lineString) {
-        this.lineString = lineString;
-    }
+
 
     public ServiceShape(ArrayList<Point> points, SimpleFeature feature) {
         this.points = points;
@@ -88,7 +85,7 @@ public class ServiceShape {
         return intervals;
     }
 
-    public MultiLineString getLineString(SimpleFeature feature) throws IOException {
+    private MultiLineString getLineString(SimpleFeature feature) throws IOException {
         MultiLineString lineString = (MultiLineString)feature.getDefaultGeometryProperty().getValue();
         return lineString;
     }
