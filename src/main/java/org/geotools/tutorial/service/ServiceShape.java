@@ -68,7 +68,7 @@ public class ServiceShape {
         for(LineString lineString : lineStrings){
             Geometry geometry = lineString.intersection(curve);
             int j = 1;
-            for(int i = 1; i < geometry.getNumGeometries() - 1; i += 2){
+            for(int i = 0; i < geometry.getNumGeometries() - 1; i++){
                 Interval interval = new Interval();
                 Point currentPoint = (Point) geometry.getGeometryN(i);
                 Point nextPoint = (Point) geometry.getGeometryN(i + 1);
