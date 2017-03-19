@@ -38,11 +38,18 @@ public class ServiceShape {
 
     public ArrayList<Interval> getIntervals() throws TransformException, ParseException, IOException {
         Point p1 = points.get(0);
+
         Point p2 = points.get(1);
 
+        Point p3 = points.get(2);
 
-        Perpedicular perpedicular = new Perpedicular(p1, p2);
+
+
+
+        Perpedicular perpedicular = new Perpedicular(p1, p2, p3);
+
         Geometry line = perpedicular.getPerpendicular();
+
 
 
         double azimuthP2P1 = GeodeticLab.getAzimuth(p2, p1);

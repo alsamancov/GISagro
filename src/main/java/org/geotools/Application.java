@@ -6,20 +6,21 @@ import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
+import org.geotools.map.event.MapLayerEvent;
+import org.geotools.map.event.MapLayerListEvent;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.styling.*;
 import org.geotools.styling.Stroke;
@@ -43,8 +44,6 @@ import java.awt.*;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.event.ActionEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -59,6 +58,12 @@ public class Application{
     ArrayList<com.vividsolutions.jts.geom.Point> points = new ArrayList<com.vividsolutions.jts.geom.Point>();
     ArrayList<Interval> intervals = new ArrayList<Interval>();
     MapContent map = new MapContent();
+    DefaultFeatureCollection pointCollection;
+    Layer pointLayer;
+    SimpleFeatureTypeBuilder pointFeatureTypeBuilder = new SimpleFeatureTypeBuilder();
+    SimpleFeatureType pointType = null;
+
+
 
     private enum GeomType{
         POINT,
@@ -72,6 +77,8 @@ public class Application{
     private static final float OPACITY = 1.0f;
     private static final float LINE_WIDTH = 1.0f;
     private static final float POINT_SIZE = 10.0f;
+
+    Style pointStyle = SLD.createPointStyle("Circle",Color.BLUE, Color.BLACK, 0.5f, POINT_SIZE);
 
     private JMapFrame mapFrame;
     private SimpleFeatureSource featureSource;
@@ -92,8 +99,11 @@ public class Application{
         if(file == null){
             return;
         }
+
         FileDataStore store = FileDataStoreFinder.getDataStore(file);
+
         featureSource = store.getFeatureSource();
+
         setGeometry();
 
 
@@ -111,6 +121,9 @@ public class Application{
         toolBar.addSeparator();
         toolBar.add(button);
         toolBar.add(new JButton(new ExportShapefileAction("Save result in shp")));
+
+        createPointLayer();
+        map.addLayer(pointLayer);
 
         button.addActionListener(e -> mapFrame.getMapPane().setCursorTool(
                 new CursorTool() {
@@ -132,47 +145,94 @@ public class Application{
         mapFrame.setVisible(true);
     }
 
+    private void createPointLayer() {
+       if(pointType == null){
+           pointFeatureTypeBuilder.setName("Point");
+           pointFeatureTypeBuilder.setCRS(featureSource.getSchema().getCoordinateReferenceSystem());
+           pointFeatureTypeBuilder.add("geom", Point.class);
+           pointType = pointFeatureTypeBuilder.buildFeatureType();
+           pointCollection = new DefaultFeatureCollection(null, pointType);
+       }
+
+       pointLayer = new FeatureLayer(pointCollection, pointStyle);
+       map.addLayer(pointLayer);
+       mapFrame.getMapPane();
+    }
+
+
     private void selectFeatures(MapMouseEvent ev) throws TransformException, ParseException, IOException {
         DirectPosition2D position2D = ev.getMapPosition();
 
         com.vividsolutions.jts.geom.Point geoPoint = geometryFactory.createPoint(new Coordinate(position2D.getX(), position2D.getY()));
         points.add(geoPoint);
-        System.out.println("Selected point: " + geoPoint.toString());
+        //System.out.println("Selected point: " + geoPoint.toString());
         //drawGeoPoint(points);
+        pointCollection.add(SimpleFeatureBuilder.build(pointType, new Object[]{geoPoint}, null));
+
+        MapLayerEvent mapLayerEvent = new MapLayerEvent(pointLayer, MapLayerEvent.DATA_CHANGED);
+        MapLayerListEvent mapLayerListEvent = new MapLayerListEvent(map, pointLayer, map.layers().indexOf(pointLayer), mapLayerEvent);
+
+        mapFrame.getMapPane().layerChanged(mapLayerListEvent);
 
 
-
-        Point screenPos = ev.getPoint();
-        Rectangle screenRect = new Rectangle(screenPos.x-2, screenPos.y-2, 5, 5);
-
-        AffineTransform screenToWorld = mapFrame.getMapPane().getScreenToWorldTransform();
-        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
-        ReferencedEnvelope bbox = new ReferencedEnvelope(
-                worldRect,
-                mapFrame.getMapContent().getCoordinateReferenceSystem()
-        );
-
-        Filter filter = filterFactory2.intersects(filterFactory2.property(geometryAttributeName), filterFactory2.literal(bbox));
-
-        try{
-            SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
-            Set<FeatureId> IDs = new HashSet<>();
-            try(SimpleFeatureIterator iterator = selectedFeatures.features()){
-                while(iterator.hasNext()){
-                    SimpleFeature feature = iterator.next();
-                    IDs.add(feature.getIdentifier());
-                }
-            }
-            if(IDs.isEmpty()){
-                System.out.println(" no feature selected");
-            }
-            displaySelectedFeatures(IDs);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+//        Point screenPos = ev.getPoint();
+//        Rectangle screenRect = new Rectangle(screenPos.x-2, screenPos.y-2, 5, 5);
+//
+//        AffineTransform screenToWorld = mapFrame.getMapPane().getScreenToWorldTransform();
+//        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
+//        ReferencedEnvelope bbox = new ReferencedEnvelope(
+//                worldRect,
+//                mapFrame.getMapContent().getCoordinateReferenceSystem()
+//        );
+//
+//        Filter filter = filterFactory2.intersects(filterFactory2.property(geometryAttributeName), filterFactory2.literal(bbox));
+//
+//        try{
+//            SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
+//            Set<FeatureId> IDs = new HashSet<>();
+//            try(SimpleFeatureIterator iterator = selectedFeatures.features()){
+//                while(iterator.hasNext()){
+//                    SimpleFeature feature = iterator.next();
+//                    IDs.add(feature.getIdentifier());
+//                }
+//            }
+//            if(IDs.isEmpty()){
+//                System.out.println(" no feature selected");
+//            }
+//            displaySelectedFeatures(IDs);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
     }
+
+    private Layer getPointLayer(com.vividsolutions.jts.geom.Point geoPoint){
+        final SimpleFeatureType POINT_TYPE = createFeatureTypePoint();
+
+        DefaultFeatureCollection features = new DefaultFeatureCollection("internal", POINT_TYPE);
+
+        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(POINT_TYPE);
+        featureBuilder.add(geoPoint);
+        featureBuilder.add("abc");
+        SimpleFeature feature = featureBuilder.buildFeature(null);
+        features.add(feature);
+        Style style = SLD.createPointStyle("circle", Color.BLUE, Color.BLACK, 0.3f, 15);
+        return new FeatureLayer(features, style);
+    }
+
+    private SimpleFeatureType createFeatureTypePoint() {
+        SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
+        builder.setName("Location");
+        builder.setCRS(DefaultGeographicCRS.WGS84);
+
+        builder.add("the_geom", Point.class);
+        builder.length(15).add("Name", String.class);
+        builder.add("number", Integer.class);
+
+        final SimpleFeatureType LOCATION = builder.buildFeatureType();
+        return LOCATION;
+    }
+
 
 //    private void drawGeoPoint(ArrayList<com.vividsolutions.jts.geom.Point> geoPoints) throws SchemaException, IOException {
 //
@@ -441,5 +501,6 @@ public class Application{
             final SimpleFeatureType LOCATION = builder.buildFeatureType();
             return LOCATION;
         }
+
     }
 }

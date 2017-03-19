@@ -7,56 +7,80 @@ import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.opengis.referencing.operation.TransformException;
 
 import java.text.ParseException;
+import java.util.Arrays;
 
 
 public class Perpedicular {
     private LineString perpendicular;
     private LineString baseLine;
-    private Point startPoint;
-    private Point endPoint;
-    private Point deltaEndPoint;
-    private double azimuth;
-    private double distance;
+    private Point pointA;
+    private Point pointB;
+    private Point pointC;
+    private double azimuthAB;
+    private double distanceAB;
+    private GeometryLab geometryLab = new GeometryLab();
 
 
     public Perpedicular() {
     }
 
-    public Perpedicular(Point startPoint, Point endPoint) throws TransformException, ParseException {
-        this.startPoint = startPoint;
-        this.endPoint = endPoint;
-        this.azimuth = GeodeticLab.getAzimuth(startPoint, endPoint);
-        this.distance = GeodeticLab.getDistance(startPoint, endPoint);
-        this.deltaEndPoint = GeodeticLab.solveDirectProblem(startPoint, azimuth, (distance * 2));
+    public Perpedicular(Point pointA, Point pointB, Point pointC) throws TransformException, ParseException {
+        this.pointA = pointA;
+        this.pointB = pointB;
+        this.pointC = pointC;
+        this.azimuthAB = GeodeticLab.getAzimuth(pointA, pointB);
+        this.distanceAB = GeodeticLab.getDistance(pointA, pointB);
+        this.getBaseLine();
     }
 
     public LineString getPerpendicular() throws TransformException, ParseException {
-        double radius = startPoint.distance(deltaEndPoint);
-        Polygon circle1 = (Polygon) createCircle(startPoint.getX(), startPoint.getY(), (radius/1.9));
-        Polygon circle2 = (Polygon) createCircle(deltaEndPoint.getX(), deltaEndPoint.getY(), (radius/1.9));
+        double radius = longestGeodeticLine();
+        Polygon circle1 = (Polygon) createCircle(pointC.getX(), pointC.getY(), radius);
         LineString lineString1 = this.convertPolygon(circle1);
-        LineString lineString2 = this.convertPolygon(circle2);
-        Geometry tempGeometry = lineString1.intersection(lineString2);
-        Coordinate[] points = tempGeometry.getCoordinates();
-        GeometryLab geometryLab = new GeometryLab();
-        LineString resultLine = geometryLab.getLineFromCoordinates(points);
-        Point perpendicularStartPoint = resultLine.getStartPoint();
-        LineString newBaseLine = geometryLab.getLineFromPoints(startPoint, deltaEndPoint);
-        Geometry intersect = resultLine.intersection(newBaseLine);
-        double perpendicularsAzimuth = GeodeticLab.getAzimuth(perpendicularStartPoint, (Point) intersect);
-        double perpendicularsDistance = GeodeticLab.getDistance(perpendicularStartPoint, (Point) intersect);
-        Point newIntersect = GeodeticLab.solveDirectProblem(perpendicularStartPoint, perpendicularsAzimuth, perpendicularsDistance + 5);
-        LineString newResult = geometryLab.getLineFromPoints(perpendicularStartPoint, newIntersect);
-        return newResult;
+
+        Geometry geometry1 = lineString1.intersection(baseLine);
+
+        Point pointOnBase = geometry1.getCentroid();
+
+        double perpendicularsAzimuth = GeodeticLab.getAzimuth(pointC, pointOnBase);
+        Point deltaPerPoint = GeodeticLab.solveDirectProblem(pointC, perpendicularsAzimuth, -10);
+        Point deltaPointOnBase = GeodeticLab.solveDirectProblem(pointOnBase, perpendicularsAzimuth, 10);
+        perpendicular = geometryLab.getLineFromPoints(deltaPerPoint, deltaPointOnBase);
+
+        return perpendicular;
     }
 
     public void setPerpendicular(LineString perpendicular) {
         this.perpendicular = perpendicular;
     }
 
-    public LineString getBaseLine() {
+    private LineString getBaseLine() throws TransformException, ParseException {
+        double deltaLength = longestLine();
+        Point deltaA = GeodeticLab.solveDirectProblem(pointA, azimuthAB, -deltaLength);
+        Point deltaB = GeodeticLab.solveDirectProblem(pointB, azimuthAB, deltaLength);
+        baseLine = geometryLab.getLineFromPoints(deltaA, deltaB);
         return baseLine;
     }
+
+    private double longestLine() throws TransformException {
+        double[] distances = new double[3];
+        distances[0] = GeodeticLab.getDistance(pointA, pointB);
+        distances[1] = GeodeticLab.getDistance(pointA, pointC);
+        distances[2] = GeodeticLab.getDistance(pointB, pointC);
+        Arrays.sort(distances);
+        return distances[2];
+    }
+
+    private double longestGeodeticLine(){
+        double[] distances = new double[3];
+        distances[0] = pointA.distance(pointB);
+        distances[1] = pointA.distance(pointC);
+        distances[2] = pointB.distance(pointC);
+        Arrays.sort(distances);
+        return distances[2];
+    }
+
+
 
     public void setBaseLine(LineString baseLine) {
         this.baseLine = baseLine;

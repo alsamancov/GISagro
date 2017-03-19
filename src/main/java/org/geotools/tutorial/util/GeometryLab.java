@@ -6,9 +6,6 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.text.ParseException;
 
-/**
- * Created by Alexey on 03/10/2017.
- */
 public class GeometryLab {
     private GeometryFactory geometryFactory;
     public GeometryLab() {
