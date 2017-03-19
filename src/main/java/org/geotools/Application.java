@@ -117,7 +117,7 @@ public class Application{
         mapFrame.enableLayerTable(true);
 
         JToolBar toolBar = mapFrame.getToolBar();
-        JButton button = new JButton("Choose two points and press Save");
+        JButton button = new JButton("Choose three points and press Save");
         toolBar.addSeparator();
         toolBar.add(button);
         toolBar.add(new JButton(new ExportShapefileAction("Save result in shp")));
@@ -166,43 +166,12 @@ public class Application{
         com.vividsolutions.jts.geom.Point geoPoint = geometryFactory.createPoint(new Coordinate(position2D.getX(), position2D.getY()));
         points.add(geoPoint);
         //System.out.println("Selected point: " + geoPoint.toString());
-        //drawGeoPoint(points);
         pointCollection.add(SimpleFeatureBuilder.build(pointType, new Object[]{geoPoint}, null));
 
         MapLayerEvent mapLayerEvent = new MapLayerEvent(pointLayer, MapLayerEvent.DATA_CHANGED);
         MapLayerListEvent mapLayerListEvent = new MapLayerListEvent(map, pointLayer, map.layers().indexOf(pointLayer), mapLayerEvent);
 
         mapFrame.getMapPane().layerChanged(mapLayerListEvent);
-
-
-//        Point screenPos = ev.getPoint();
-//        Rectangle screenRect = new Rectangle(screenPos.x-2, screenPos.y-2, 5, 5);
-//
-//        AffineTransform screenToWorld = mapFrame.getMapPane().getScreenToWorldTransform();
-//        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
-//        ReferencedEnvelope bbox = new ReferencedEnvelope(
-//                worldRect,
-//                mapFrame.getMapContent().getCoordinateReferenceSystem()
-//        );
-//
-//        Filter filter = filterFactory2.intersects(filterFactory2.property(geometryAttributeName), filterFactory2.literal(bbox));
-//
-//        try{
-//            SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
-//            Set<FeatureId> IDs = new HashSet<>();
-//            try(SimpleFeatureIterator iterator = selectedFeatures.features()){
-//                while(iterator.hasNext()){
-//                    SimpleFeature feature = iterator.next();
-//                    IDs.add(feature.getIdentifier());
-//                }
-//            }
-//            if(IDs.isEmpty()){
-//                System.out.println(" no feature selected");
-//            }
-//            displaySelectedFeatures(IDs);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
     }
 
@@ -234,60 +203,6 @@ public class Application{
     }
 
 
-//    private void drawGeoPoint(ArrayList<com.vividsolutions.jts.geom.Point> geoPoints) throws SchemaException, IOException {
-//
-//        final SimpleFeatureType TYPE = DataUtilities.createType("Location",
-//                "the_geom:Point:srid=4326," +
-//                        "name:String," +
-//                        "number:Integer");
-//
-//        List<SimpleFeature> features = new ArrayList<>();
-//        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
-//        DefaultFeatureCollection featureCollection = new DefaultFeatureCollection("internal", TYPE);
-//
-//
-//        for(int i = 0; i < geoPoints.size(); i++){
-//            String name = "pnt";
-//            int number = i;
-//            com.vividsolutions.jts.geom.Point point = geoPoints.get(i);
-//
-//            featureBuilder.add(point);
-//            featureBuilder.add(name);
-//            featureBuilder.add(number);
-//            SimpleFeature feature = featureBuilder.buildFeature(null);
-//            featureCollection.add(feature);
-//        }
-//        Style style = SLD.createPointStyle("Point", Color.BLACK, Color.BLUE, 0.3f, 15);
-//        Layer pointLayer = new FeatureLayer(featureCollection, style);
-//        pointLayer.setTitle("Choosed Point");
-//        map.addLayer(pointLayer);
-//        ((FeatureLayer) pointLayer).setStyle(style);
-//        pointLayer.setVisible(true);
-//        GTRenderer gtRenderer = new StreamingRenderer();
-//        JMapPane mapPane = new JMapPane(map);
-//        mapFrame.getMapPane().repaint();
-//
-//
-//
-//        //        final SimpleFeatureType TYPE = DataUtilities.createType("Flag", "Location:Point, Name:String");
-////        //SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
-////        SimpleFeatureBuilder builder = new SimpleFeatureBuilder(TYPE);
-////
-////        builder.add(geoPoint);
-////        SimpleFeature feature = builder.buildFeature("fid.1");
-////
-////        //SimpleFeature feature = featureBuilder.buildFeature("FeaturePoint");
-////        DefaultFeatureCollection featureCollection = new DefaultFeatureCollection("internal", TYPE);
-////        featureCollection.add(feature);
-////        Style style = SLD.createPointStyle("Point", Color.BLACK, Color.BLUE, 0.3f, 15);
-////        Layer pointLayer = new FeatureLayer(featureCollection, style);
-////        pointLayer.setTitle("Choosed Point");
-////        map.addLayer(pointLayer);
-////        ((FeatureLayer) pointLayer).setStyle(style);
-////        pointLayer.setVisible(true);
-////        mapFrame.getMapPane().repaint();
-//
-//    }
 
     private void displaySelectedFeatures(Set<FeatureId> IDs) {
         Style style;
